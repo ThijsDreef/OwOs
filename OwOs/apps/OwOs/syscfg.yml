@@ -1,0 +1,4 @@
+syscfg.vals:
+  BLE_HCI_TRANSPORT: builtin
+  DEVICE_NAME: "pinetime OWOS"
+  BLE_STORE_CONFIG_PERSIST: 0
