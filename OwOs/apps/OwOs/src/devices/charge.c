@@ -6,7 +6,7 @@ int batteryMv;
 
 static int battery_change_callback(struct battery_prop_listener *listener, const struct battery_property *prop) {
     if(prop->bp_type == BATTERY_PROP_VOLTAGE_NOW) {
-        batteryPercentage = ((prop->bp_value.bpv_voltage) - 3500) / 6;
+        batteryPercentage = max(0, min(100, ((prop->bp_value.bpv_voltage) - 3500) / 6));
         batteryMv = prop->bp_value.bpv_voltage;
     }
     return 0;

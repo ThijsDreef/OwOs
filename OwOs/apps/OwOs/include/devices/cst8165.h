@@ -1,3 +1,6 @@
+#ifndef __OWOS_CST8165
+#define __OWOS_CST8165
+
 #include <inttypes.h>
 
 enum Gestures {
@@ -15,6 +18,7 @@ struct TouchInfo {
     uint16_t x;
     uint16_t y;
     uint8_t action;
+
     uint8_t finger;
     Gestures_t gesture;
 } typedef TouchInfo_t;
@@ -22,3 +26,5 @@ struct TouchInfo {
 void initTouch();
 void sleepTouch();
 TouchInfo_t getTouchInfo();
+
+#endif

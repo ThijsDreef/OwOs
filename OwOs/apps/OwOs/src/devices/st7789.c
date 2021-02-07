@@ -1,5 +1,5 @@
 #include "devices/st7789.h"
-#include "resources/font.c"
+#include "util/font.h"
 #include <hal/hal_gpio.h>
 #include <hal/hal_spi.h>
 #include <os/os.h>
@@ -115,31 +115,32 @@ void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
     os_free(buffer);
 }
 
-void drawCharacter(uint16_t x, uint16_t y, char character, uint16_t color) {
-    if (character == 32) {
-        fillRect(x, y, 16, 16, 0x0);
-        return;
+int drawCharacter(uint16_t atX, uint16_t atY, char character, uint16_t color) {
+    const character_t* fontChar = getCharacter(character);
+    if (fontChar == NULL) return 16;
+
+    uint16_t* data = (uint16_t*)os_malloc(fontChar->width * fontChar->height * 2);
+    const uint8_t* fromImage = (uint8_t*)getFontPage(fontChar->page);
+    for (int y = 0; y < fontChar->height; y++) {
+        for (int x = 0; x < fontChar->width; x++) {
+            data[x + y * fontChar->width] = (uint16_t)(color * (fromImage[(fontChar->x + x) + (y + fontChar->y) * 256] / 255.0f));
+        }
     }
-    character -= 33;
-    if (character <= 0 || character > 96) return;
-    uint16_t* buffer = os_malloc(16 * 16 * 2);
-    for (int i = 0; i < 256; i++) buffer[i] = ((fontData[character / 32][i] >> (character % 32)) & 1) * color;
-    setAddressWindow(x, y, x + 15, y + 15);
-    disp_cmd(RAMWR, NULL, 0);
-    disp_cmd(0, (uint8_t*)buffer, 16*16*2);
-    os_free(buffer);
+    setAddressWindow(atX, atY, atX + fontChar->width - 1, atY + fontChar->height - 1);
+    disp_cmd(RAMWR, (uint8_t*)data, fontChar->width * fontChar->height * 2);
+    os_free(data);
+    return fontChar->xAdvance;
 }
 
 void drawString(char* characters, uint16_t x, uint16_t y) {
+    int advance = 0;
     while (*characters) {
-        drawCharacter(x * 16, y * 16, *characters, color565(255, 255, 255));
-        x ++;
-        if (x > 14) {
-            y++;
-            x = 0;
-        }
+        advance += drawCharacter(x + advance, y, *characters, color565(255, 255, 255));
+        // const kerning_t* kerning = getKerning(*characters, *(characters + 1));
+        // if (kerning != NULL) advance += kerning->amount;
         characters++;
     }
+
 }
 
 void resetDisplay() {
